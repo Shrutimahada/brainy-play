@@ -24,9 +24,9 @@ export default function PatternGame() {
   const [selected, setSelected] = useState<number[]>([]);
   const [status, setStatus] = useState<"playing" | "lost">("playing");
   const [showSuccess, setShowSuccess] = useState(false);
+
   const matchSound = new Audio("/sounds/match.wav");
   const complete = new Audio("/sounds/complete.wav");
-
 
   const gridSize = 3 + Math.floor(level / 3);
   const totalCells = gridSize * gridSize;
@@ -59,7 +59,7 @@ export default function PatternGame() {
     return [...arr].sort(() => Math.random() - 0.5);
   }
 
-  function handleClick(id: number) {
+  function handleSelect(id: number) {
     if (showPattern || selected.includes(id) || status !== "playing") return;
 
     const newSelected = [...selected, id];
@@ -69,18 +69,16 @@ export default function PatternGame() {
 
     /* ❌ Wrong selection */
     if (!correctIds.includes(id)) {
-    complete.currentTime = 0;
-    complete.play();
-
+      complete.currentTime = 0;
+      complete.play();
       setStatus("lost");
       return;
     }
 
     /* ✅ Correct round */
     if (newSelected.length === correctIds.length) {
-
-    matchSound.currentTime = 0; // reset sound
-    matchSound.play();          // 🔊 PLAY SOUND
+      matchSound.currentTime = 0;
+      matchSound.play();
 
       setShowSuccess(true);
 
@@ -93,7 +91,7 @@ export default function PatternGame() {
 
   return (
     <Layout>
-      <div className="bg-white p-8 rounded-2xl shadow-xl text-center w-full max-w-md">
+      <div className="bg-white p-8 rounded-2xl shadow-xl text-center w-full max-w-md select-none">
         <h2 className="text-3xl font-bold text-indigo-600">
           🟦 Pattern Memory Game
         </h2>
@@ -117,8 +115,14 @@ export default function PatternGame() {
               You reached level {level}
             </p>
             <button
-              onClick={() => setLevel(1)}
-              className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+              onPointerDown={() => setLevel(1)}
+              className="
+                mt-4 px-6 py-2
+                bg-indigo-600 text-white
+                rounded-lg font-semibold
+                hover:bg-indigo-700
+                touch-manipulation
+              "
             >
               Restart
             </button>
@@ -134,15 +138,25 @@ export default function PatternGame() {
             {cells.map(cell => (
               <div
                 key={cell.id}
-                onClick={() => handleClick(cell.id)}
-                className={`w-14 h-14 rounded-lg cursor-pointer transition-all duration-300
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(cell.id);
+                }}
+                className={`
+                  w-16 h-16 sm:w-14 sm:h-14
+                  rounded-xl
+                  transition-all duration-200
+                  active:scale-95
+                  cursor-pointer
+                  touch-manipulation
                   ${
                     showPattern && cell.active
                       ? cell.color
                       : selected.includes(cell.id)
                       ? cell.color
                       : "bg-gray-200 hover:bg-gray-300"
-                  }`}
+                  }
+                `}
               />
             ))}
           </div>
