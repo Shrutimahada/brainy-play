@@ -1,21 +1,15 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { cards as initialCards, type CardType } from "../data/cards";
 import Board from "../components/board";
 import Layout from "../components/layout";
 
-export default function EmojiGame() {
+export default function Game() {
   const [cards, setCards] = useState<CardType[]>(initialCards);
   const [flippedIndexes, setFlippedIndexes] = useState<number[]>([]);
   const [gameCompleted, setGameCompleted] = useState(false);
+  const matchSound = new Audio("/sounds/match.wav");
+  const complete = new Audio("/sounds/complete.wav");
   const [matches, setMatches] = useState(0);
-
-  const matchSound = useRef<HTMLAudioElement | null>(null);
-  const completeSound = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    matchSound.current = new Audio("/sounds/match.wav");
-    completeSound.current = new Audio("/sounds/complete.wav");
-  }, []);
 
   const restartGame = () => {
     const resetCards = initialCards.map(card => ({
@@ -31,10 +25,17 @@ export default function EmojiGame() {
   };
 
   const handleCardClick = (index: number) => {
-    if (flippedIndexes.length >= 2 || cards[index].isFlipped || cards[index].isMatched) return;
+    if (
+      flippedIndexes.length === 2 ||
+      cards[index].isFlipped ||
+      cards[index].isMatched
+    ) {
+      return;
+    }
 
     const newCards = [...cards];
     newCards[index].isFlipped = true;
+
     setCards(newCards);
     setFlippedIndexes([...flippedIndexes, index]);
   };
@@ -48,7 +49,8 @@ export default function EmojiGame() {
         newCards[first].isMatched = true;
         newCards[second].isMatched = true;
 
-        matchSound.current?.play();
+        matchSound.currentTime = 0;
+        matchSound.play();
 
         setCards(newCards);
         setMatches(prev => prev + 1);
@@ -66,39 +68,42 @@ export default function EmojiGame() {
   }, [flippedIndexes, cards]);
 
   useEffect(() => {
-    if (cards.every(card => card.isMatched) && !gameCompleted) {
-      completeSound.current?.play();
+    const allMatched = cards.every(card => card.isMatched);
+
+    if (allMatched && !gameCompleted) {
+      complete.currentTime = 0;
+      complete.play();
       setGameCompleted(true);
     }
   }, [cards, gameCompleted]);
 
   return (
     <Layout>
-      <div className="flex flex-col items-center gap-6 px-4 sm:px-6">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center">
+      <div className="flex flex-col items-center gap-6">
+        <h2 className="text-3xl md:text-4xl font-bold">
           🎯 Emoji Memory Game
         </h2>
 
-        <p className="text-gray-600 text-lg sm:text-xl">
+        <p className="text-gray-600">
           Matches: {matches} / {initialCards.length / 2}
         </p>
 
         <Board cards={cards} onCardClick={handleCardClick} />
 
         {gameCompleted && (
-          <div className="flex flex-col items-center gap-4 mt-4">
-            <p className="text-green-600 text-xl sm:text-2xl font-semibold animate-pulse text-center">
+          <>
+            <p className="text-green-600 text-xl font-semibold animate-pulse">
               🎉 Congratulations! You won!
             </p>
 
             <button
-              onPointerDown={restartGame}
-              className="px-8 py-3 sm:px-10 sm:py-4 bg-green-600 text-white rounded-lg
-                         hover:bg-green-700 transition font-semibold touch-manipulation"
+              onClick={restartGame}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg
+                         hover:bg-green-700 transition font-semibold"
             >
               🔄 Play Again
             </button>
-          </div>
+          </>
         )}
       </div>
     </Layout>
